@@ -23,10 +23,12 @@ class Lox
   end
 
   private
-  attr_reader :args
+  attr_reader :args, :had_error
 
   def run_file(filepath)
     run(File.read(filepath))
+
+    System.exit(65) if had_error
   end
 
   def run_prompt
@@ -36,7 +38,10 @@ class Lox
       print "> "
       line = STDIN.gets
       break unless line
+
       run(line)
+
+      @had_error = false
     end
   end
 
@@ -56,6 +61,6 @@ class Lox
 
   def report(line, where, message)
     puts "[line #{line}] Error #{where}: #{message}"
-    had_error = true
+    @had_error = true
   end
 end
