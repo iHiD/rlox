@@ -49,4 +49,13 @@ class Lox
       puts "token"
     end
   end
+
+  def error(line, msg)
+    report(line, "", msg)
+  end
+
+  def report(line, where, message)
+    puts "[line #{line}] Error #{where}: #{message}"
+    had_error = true
+  end
 end
