@@ -48,7 +48,7 @@ module Lox
 
       puts "Tokens:"
       tokens.each do |token|
-        puts "token"
+        puts token
       end
     end
 
