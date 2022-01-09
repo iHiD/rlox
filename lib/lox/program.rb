@@ -1,14 +1,18 @@
+require 'singleton'
+
 module Lox
   class Program
+    include Singleton
+
     def self.exec!(args)
-      new(args).exec!
+      instance.exec!(args)
     end
 
-    def initialize(args)
-      @args = args
+    def self.log_error(*args)
+      instance.log_error(*args)
     end
 
-    def exec!
+    def exec!(args)
       if(args.length > 1)
         puts "Usage: lox [script]"
         exit(64)
@@ -19,13 +23,17 @@ module Lox
       end
     end
 
+    def log_error(line, msg)
+      report(line, "", msg)
+    end
+
     private
     attr_reader :args, :had_error
 
     def run_file(filepath)
       run(File.read(filepath))
 
-      System.exit(65) if had_error
+      exit(65) if had_error
     end
 
     def run_prompt
@@ -50,10 +58,6 @@ module Lox
       tokens.each do |token|
         puts token
       end
-    end
-
-    def error(line, msg)
-      report(line, "", msg)
     end
 
     def report(line, where, message)

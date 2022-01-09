@@ -8,7 +8,7 @@ module Lox
     end
 
     def to_s
-      "#{type} #{lexeme} #{literal}"
+      "#{type} | #{lexeme} | #{literal} | #{line}"
     end
 
     private
@@ -16,4 +16,5 @@ module Lox
   end
 end
 
-require_relative 'token_types'
+require_relative 'token/types'
+require_relative 'token/keywords'
