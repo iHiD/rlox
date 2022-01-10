@@ -1,7 +1,7 @@
 // Foobar
-53 / 3.14
-7 <= 12
-var language = (1 + 2);
+language = (1 + 2);
+7 <= 12;
+53 / 3.14;
 foo = "bar 123"
 
 something = nil

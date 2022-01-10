@@ -1,3 +1,4 @@
+p "HERE"
 module Lox
   keywords = %i[
     and class else false fun for if nil or

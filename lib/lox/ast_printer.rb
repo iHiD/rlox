@@ -1,5 +1,9 @@
 module Lox
   class AstPrinter
+    def self.print(expr)
+      new.print(expr)
+    end
+
     def print(expr)
       expr.accept(self)
     end
@@ -9,11 +13,11 @@ module Lox
     end
 
     def visit_grouping_expr(expr)
-      parenthesize("group", expr.expression)
+      parenthesize(:group, expr.expression)
     end
 
     def visit_literal_expr(expr)
-      return "nil" if expr.value.nil?
+      return :nil if expr.value.nil?
 
       expr.value.to_s
     end

@@ -53,7 +53,7 @@ module Lox
         when c.alpha?; handle_identifier!
         when c.strip == "" # Remove whitespace
         else
-          Program.log_error(line, "Unexpected character: #{c}")
+          Program.log_scanner_error(line, "Unexpected character: #{c}")
         end
       end
     end
@@ -98,7 +98,7 @@ module Lox
       end
 
       if at_end?
-        Program.log_error(line, "Unterminated string")
+        Program.log_scanner_error(line, "Unterminated string")
         return
       end
 
@@ -122,7 +122,7 @@ module Lox
       advance! while peak.alphanumeric?
 
       text = source[start...current]
-      type = Keywords[text]
+      type = Lox::Keywords[text]
 
       add_token(type ? type : Token::IDENTIFIER)
     end

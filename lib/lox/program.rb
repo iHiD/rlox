@@ -8,9 +8,14 @@ module Lox
       instance.exec!(args)
     end
 
-    def self.log_error(*args)
-      instance.log_error(*args)
+    def self.log_scanner_error(*args)
+      instance.log_scanner_error(*args)
     end
+
+    def self.log_parse_error(*args)
+      instance.log_parse_error(*args)
+    end
+
 
     def exec!(args)
       if(args.length > 1)
@@ -23,8 +28,16 @@ module Lox
       end
     end
 
-    def log_error(line, msg)
+    def log_scanner_error(line, msg)
       report(line, "", msg)
+    end
+
+    def log_parse_error(token, msg)
+      if token.type == Token::EOF
+        report(token.line, " at end", msg)
+      else
+        report(token.line, " at '#{token.lexeme}'", msg)
+      end
     end
 
     private
@@ -54,10 +67,18 @@ module Lox
       scanner = Scanner.new(source)
       tokens = scanner.scan_tokens
 
-      puts "Tokens:"
-      tokens.each do |token|
-        puts token
-      end
+      parser = Parser.new(tokens)
+      expression = parser.parse
+      p expression
+
+      return if had_error
+
+      AstPrinter.print(expression)
+
+#       puts "Tokens:"
+#       tokens.each do |token|
+#         puts token
+#       end
     end
 
     def report(line, where, message)

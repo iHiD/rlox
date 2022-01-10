@@ -11,6 +11,10 @@ module Lox
       "#{type} | #{lexeme} | #{literal} | #{line}"
     end
 
+    def inspect
+      type
+    end
+
     attr_reader :type, :lexeme, :literal, :line
   end
 end
