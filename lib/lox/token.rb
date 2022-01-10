@@ -11,7 +11,6 @@ module Lox
       "#{type} | #{lexeme} | #{literal} | #{line}"
     end
 
-    private
     attr_reader :type, :lexeme, :literal, :line
   end
 end
