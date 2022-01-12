@@ -84,7 +84,8 @@ module Lox
       return Expr::Literal.new(Token::TRUE) if match?(Token::TRUE)
       return Expr::Literal.new(Token::NIL) if match?(Token::NIL)
 
-      return Expr::Literal.new(previous.literal) if match?(Token::NUMBER, Token::STRING)
+      return Expr::Literal.new(previous.literal.to_f) if match?(Token::NUMBER)
+      return Expr::Literal.new(previous.literal) if match?(Token::STRING)
 
       if match?(Token::LEFT_PAREN)
         expr = expression()

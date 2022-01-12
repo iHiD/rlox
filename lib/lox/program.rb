@@ -16,6 +16,13 @@ module Lox
       instance.log_parse_error(*args)
     end
 
+    def self.log_runtime_error(*args)
+      instance.log_runtime_error(*args)
+    end
+
+    def initialize
+      @interpreter = Interpreter.new
+    end
 
     def exec!(args)
       if(args.length > 1)
@@ -40,13 +47,22 @@ module Lox
       end
     end
 
+    def log_runtime_error(exception)
+      puts exception.message
+      puts "line [#{exception.token.line}]"
+
+      had_runtime_error = true
+    end
+
     private
-    attr_reader :args, :had_error
+    attr_reader :interpreter
+    attr_reader :args, :had_compile_error, :had_runtime_error
 
     def run_file(filepath)
       run(File.read(filepath))
 
-      exit(65) if had_error
+      exit(65) if had_compile_error
+      exit(70) if had_runtime_error
     end
 
     def run_prompt
@@ -59,7 +75,7 @@ module Lox
 
         run(line)
 
-        @had_error = false
+        @had_compile_error = false
       end
     end
 
@@ -69,21 +85,20 @@ module Lox
 
       parser = Parser.new(tokens)
       expression = parser.parse
-      p expression
 
-      return if had_error
+      return if had_compile_error
 
-      AstPrinter.print(expression)
+      interpreter.interpret(expression)
 
-#       puts "Tokens:"
-#       tokens.each do |token|
-#         puts token
-#       end
+      # puts "Tokens:"
+      # tokens.each do |token|
+      #   puts token
+      # end
     end
 
     def report(line, where, message)
       puts "[line #{line}] Error #{where}: #{message}"
-      @had_error = true
+      @had_compile_error = true
     end
   end
 end
