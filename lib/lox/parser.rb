@@ -80,14 +80,7 @@ module Lox
         equals = previous()
         value = assignment()
 
-        p "H1"
-        if expr.is_a?(Expr::Variable)
-        p "H2"
-          name = expr.name
-          p name
-          p value
-          return Expr::Assign.new(name, value)
-        end
+        return Expr::Assign.new(expr.name, value) if expr.is_a?(Expr::Variable)
 
         error(equals, "Invalid assignment target.")
       end
@@ -96,12 +89,26 @@ module Lox
     end
 
     def equality
-      expr = comparison()
+      expr = ternary()
 
       while(match?(Token::BANG_EQUAL, Token::EQUAL_EQUAL)) do
         operator = previous()
-        right = comparison()
+        right = ternary()
         expr = Expr::Binary.new(expr, operator, right)
+      end
+
+      expr
+    end
+
+    def ternary
+      expr = comparison()
+
+      if match?(Token::QUESTION)
+        true_expr = comparison()
+        consume(Token::COLON, "Expect ':' after '?'.")
+        false_expr = comparison()
+
+        expr = Expr::Ternary.new(expr, true_expr, false_expr)
       end
 
       expr

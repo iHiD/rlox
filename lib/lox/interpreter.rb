@@ -75,6 +75,14 @@ module Lox
       evaluate(expr.expression)
     end
 
+    def visit_ternary_expr(expr)
+      if truthy?(evaluate(expr.condition))
+        evaluate(expr.true_expr)
+      else
+        evaluate(expr.false_expr)
+      end
+    end
+
     def visit_unary_expr(expr)
       right = evaluate(expr.right)
 
@@ -141,8 +149,12 @@ module Lox
     end
 
     def truthy?(obj)
+      # This is pretty horrible
+      return true if obj == :true
+      return false if obj == :false
+
       return false if obj.nil?
-      return obj if obj.is_a?(Boolean)
+      return obj if obj.is_a?(TrueClass) || obj.is_a?(FalseClass)
       obj
     end
 

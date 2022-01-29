@@ -1,2 +1,4 @@
-print (true ? "good" : "bad");
-print (false ? "bad" : "good");
+var a = true;
+var b = false;
+print (a ? "good" : "bad");
+print (b ? "bad" : "good");

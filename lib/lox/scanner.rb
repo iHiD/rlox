@@ -35,6 +35,8 @@ module Lox
       when '+'; add_token(Token::PLUS)
       when ';'; add_token(Token::SEMICOLON)
       when '*'; add_token(Token::STAR)
+      when '?'; add_token(Token::QUESTION)
+      when ':'; add_token(Token::COLON)
       when '!'; add_token(advance_if_match_next!('=') ? Token::BANG_EQUAL : Token::BANG)
       when '='; add_token(advance_if_match_next!('=') ? Token::EQUAL_EQUAL : Token::EQUAL)
       when '<'; add_token(advance_if_match_next!('=') ? Token::LESS_EQUAL : Token::LESS)
