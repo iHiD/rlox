@@ -7,7 +7,9 @@ module Lox
 
   Stmt::Block = Stmt.new(:statements)
   Stmt::Expression = Stmt.new(:expression)
+  Stmt::For = Stmt.new(:condition, :body)
   Stmt::Print = Stmt.new(:expression)
   Stmt::Var = Stmt.new(:name, :initializer)
+  Stmt::While = Stmt.new(:condition, :body)
 end
 

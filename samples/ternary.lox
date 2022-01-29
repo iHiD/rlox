@@ -1,4 +1,7 @@
 var a = true;
 var b = false;
-print (a ? "good" : "bad");
-print (b ? "bad" : "good");
+var c = (5 == 5);
+print (a ? "correct" : "bug");
+print (b ? "bug" : "correct");
+print (c ? "correct" : "bug");
+print ((3==12) ? "bug" : "correct");

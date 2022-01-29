@@ -39,10 +39,49 @@ module Lox
     end
 
     def statement
+      return for_statement() if match?(Token::FOR)
+      return if_statement() if match?(Token::IF)
       return print_statement() if match?(Token::PRINT)
+      return while_statement() if match?(Token::WHILE)
       return Stmt::Block.new(block()) if match?(Token::LEFT_BRACE)
 
       expression_statement()
+    end
+
+    def for_statement
+      consume(Token::LEFT_PAREN, "Expect '(' after for")
+
+      case
+      when match?(Token::SEMICOLON)
+        initializer = nil
+      when match?(Token::VAR)
+        initializer = var_declaration()
+      else
+        initializer = expression_statement()
+      end
+
+      condition = check?(Token::SEMICOLON) ? Expr::Literal.new(true) : expression()
+      consume(Token::SEMICOLON, "Expect ';' after loop condition")
+
+      increment = expression() unless check?(Token::RIGHT_PAREN)
+      consume(Token::RIGHT_PAREN, "Expect ')' after for clauses")
+
+      body = statement()
+      body = Stmt::Block.new([ body, Stmt::Expression.new(increment) ]) if increment
+
+      res = Stmt::While.new(condition, body)
+      initializer ? Stmt::Block.new([initializer, res]) : res
+    end
+
+    def if_statement
+      consume(Token::LEFT_PAREN, "Expect '(' after if")
+      condition = expression()
+      consume(Token::RIGHT_PAREN, "Expect ')' after if condition")
+
+      then_branch = statement()
+      else_branch = statement() if match?(Token::ELSE)
+
+      Stmt::If.new(condition, then_branch, else_branch)
     end
 
     def print_statement
@@ -50,6 +89,15 @@ module Lox
       consume(Token::SEMICOLON, "Expect ';' after value.")
 
       Stmt::Print.new(value)
+    end
+
+    def while_statement
+      consume(LEFT_PAREN, "Expect '(' after while")
+      condition = expression()
+      consume(RIGHT_PAREN, "Expect ')' after while condition")
+      body = statement()
+
+      Stmt::While(condition, body)
     end
 
     def expression_statement
@@ -74,7 +122,7 @@ module Lox
     end
 
     def assignment
-      expr = equality()
+      expr = or_expr()
 
       if match?(Token::EQUAL)
         equals = previous()
@@ -83,6 +131,30 @@ module Lox
         return Expr::Assign.new(expr.name, value) if expr.is_a?(Expr::Variable)
 
         error(equals, "Invalid assignment target.")
+      end
+
+      expr
+    end
+
+    def or_expr
+      expr = and_expr()
+
+      while(match?(Token::OR))
+        operator = previous()
+        right = and_expr()
+        expr = Expr::Logical.new(expr, operator, right)
+      end
+
+      expr
+    end
+
+    def and_expr
+      expr = equality()
+
+      while(match?(Token::AND))
+        operator = previous()
+        right = and_expr()
+        expr = Expr::Logical.new(expr, operator, right)
       end
 
       expr

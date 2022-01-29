@@ -48,9 +48,25 @@ module Lox
       nil
     end
 
+    def visit_if_stmt(stmt)
+      if truthy?(evaluate(stmt.condition))
+        evaluate(stmt.then_branch)
+      else
+        evaluate(stmt.else_branch)
+      end
+      nil
+    end
+
     def visit_print_stmt(stmt)
       value = evaluate(stmt.expression)
       puts value # This is actual code, not debugging
+      nil
+    end
+
+    def visit_while_stmt(stmt)
+      while truthy?(evaluate(stmt.condition))
+        evaluate(stmt.body)
+      end
       nil
     end
 
@@ -69,6 +85,19 @@ module Lox
 
     def visit_literal_expr(expr)
       expr.value
+    end
+
+    def visit_logical_expr(expr)
+      left = evaluate(expr.left)
+
+      # Early return if we don't need the RHS
+      if expr.operator.type == Token::OR
+        return left if truthy?(left)
+      else
+        return left unless truthy?(left)
+      end
+
+      evaluate(expr.right)
     end
 
     def visit_grouping_expr(expr)
