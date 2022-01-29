@@ -1,7 +1,9 @@
 // Foobar
-language = (1 + 2);
-7 <= 12;
-53 / 3.14;
-foo = "bar 123"
+// language = (1 + 2);
 
-something = nil
+print (7 <= 12);
+print 53 / 3.14;
+
+// foo = "bar 123"
+
+// something = nil;

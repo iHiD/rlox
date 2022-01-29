@@ -84,11 +84,11 @@ module Lox
       tokens = scanner.scan_tokens
 
       parser = Parser.new(tokens)
-      expression = parser.parse
+      statements = parser.parse
 
       return if had_compile_error
 
-      interpreter.interpret(expression)
+      interpreter.interpret(statements)
 
       # puts "Tokens:"
       # tokens.each do |token|

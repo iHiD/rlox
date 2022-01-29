@@ -1,0 +1,2 @@
+print (true ? "good" : "bad");
+print (false ? "bad" : "good");

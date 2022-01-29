@@ -8,11 +8,63 @@ module Lox
   end
 
   class Interpreter
-    def interpret(expr)
-      value = evaluate(expr)
-      puts stringify(value)
+    def initialize
+      @environment = Environment.new
+    end
+
+    def interpret(statements)
+      statements.each do |statement|
+        execute(statement)
+      end
     rescue Lox::RuntimeError => e
       Program.log_runtime_error(e)
+    end
+
+    private
+    attr_accessor :environment
+
+    def execute(stmt)
+      stmt.accept(self)
+    end
+
+    def execute_block(statements, local_environment)
+      previous_environment = self.environment
+
+      begin
+        self.environment = local_environment
+        statements.each { |stmt|execute(stmt) }
+      ensure
+        self.environment = previous_environment
+      end
+    end
+
+    def visit_block_stmt(stmt)
+      execute_block(stmt.statements, Environment.new(enclosing: environment))
+      nil
+    end
+
+    def visit_expression_stmt(stmt)
+      evaluate(stmt.expression)
+      nil
+    end
+
+    def visit_print_stmt(stmt)
+      value = evaluate(stmt.expression)
+      puts value # This is actual code, not debugging
+      nil
+    end
+
+    def visit_var_stmt(stmt)
+      value = evaluate(stmt.initializer) if stmt.initializer
+
+      environment.define(stmt.name, value)
+      nil
+    end
+
+    def visit_assign_expr(expr)
+      evaluate(expr.value).tap do |value|
+        environment.assign(expr.name, value)
+      end
     end
 
     def visit_literal_expr(expr)
@@ -35,6 +87,10 @@ module Lox
       else
         nil
       end
+    end
+
+    def visit_variable_expr(expr)
+      environment.get(expr.name)
     end
 
     def visit_binary_expr(expr)
@@ -80,7 +136,6 @@ module Lox
       end
     end
 
-    private
     def evaluate(expr)
       expr.accept(self)
     end

@@ -1,1 +1,1 @@
-"Erik" + " is cool"
+print "Erik" + " is cool";

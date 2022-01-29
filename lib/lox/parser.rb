@@ -8,17 +8,91 @@ module Lox
     end
 
     def parse
-      expression()
-    rescue ParserError
-      nil
+      [].tap do |statements|
+        until at_end?
+          statements << declaration()
+        end
+      end
+    # rescue ParserError
+    #   nil
     end
 
     private
     attr_reader :tokens
     attr_accessor :current
 
+    def declaration
+      match?(Token::VAR) ? var_declaration : statement
+    rescue ParserError
+      syncronize
+      nil
+    end
+
+    def var_declaration
+      name = consume(Token::IDENTIFIER, "Expect variable name.")
+
+      initializer = expression() if match?(Token::EQUAL)
+
+      consume(Token::SEMICOLON, "Expect ';' after variable declaration")
+
+      Stmt::Var.new(name, initializer)
+    end
+
+    def statement
+      return print_statement() if match?(Token::PRINT)
+      return Stmt::Block.new(block()) if match?(Token::LEFT_BRACE)
+
+      expression_statement()
+    end
+
+    def print_statement
+      value = expression()
+      consume(Token::SEMICOLON, "Expect ';' after value.")
+
+      Stmt::Print.new(value)
+    end
+
+    def expression_statement
+      expr = expression()
+      consume(Token::SEMICOLON, "Expect ';' after expression.")
+
+      Stmt::Expression.new(expr)
+    end
+
+    def block
+      [].tap do |statements|
+        until(check?(Token::RIGHT_BRACE) || at_end?)
+          statements << declaration()
+        end
+
+        consume(Token::RIGHT_BRACE, "Expect '}' after block'")
+      end
+    end
+
     def expression
-      equality()
+      assignment()
+    end
+
+    def assignment
+      expr = equality()
+
+      if match?(Token::EQUAL)
+        equals = previous()
+        value = assignment()
+
+        p "H1"
+        if expr.is_a?(Expr::Variable)
+        p "H2"
+          name = expr.name
+          p name
+          p value
+          return Expr::Assign.new(name, value)
+        end
+
+        error(equals, "Invalid assignment target.")
+      end
+
+      expr
     end
 
     def equality
@@ -87,6 +161,8 @@ module Lox
       return Expr::Literal.new(previous.literal.to_f) if match?(Token::NUMBER)
       return Expr::Literal.new(previous.literal) if match?(Token::STRING)
 
+      return Expr::Variable.new(previous) if match?(Token::IDENTIFIER)
+
       if match?(Token::LEFT_PAREN)
         expr = expression()
         consume(Token::RIGHT_PAREN, "Expect ')' after expression.")
@@ -110,7 +186,7 @@ module Lox
     end
 
     def consume(type, message)
-      rais error(peek(), message) unless check?(type)
+      raise error(peek(), message) unless check?(type)
 
       advance()
     end
@@ -125,11 +201,11 @@ module Lox
       advance()
 
       until at_end?
-        return if previous.type == Type::SEMICOLON
+        return if previous.type == Token::SEMICOLON
 
         case peek.type
-        when Type::CLASS, Type::For, Type::FUN, Type::If, Type::Print,
-          Type::RETURN, Type::VAR, Type::WHILE
+        when Token::CLASS, Token::FOR, Token::FUN, Token::IF, Token::PRINT,
+          Token::RETURN, Token::VAR, Token::WHILE
           return
         end
 
