@@ -1,11 +1,13 @@
 module Lox
   class RuntimeError < ::RuntimeError
     attr_reader :token
-    def initialize(token, msg)
+    def initialize(token, msg = nil)
       @token = token
       super(msg)
     end
   end
+
+  class BreakControlFlow < RuntimeError; end
 
   class Interpreter
     def initialize
@@ -32,10 +34,14 @@ module Lox
 
       begin
         self.environment = local_environment
-        statements.each { |stmt|execute(stmt) }
+        statements.each { |stmt| execute(stmt) }
       ensure
         self.environment = previous_environment
       end
+    end
+
+    def visit_break_stmt(stmt)
+      raise BreakControlFlow.new(stmt)
     end
 
     def visit_block_stmt(stmt)
@@ -51,7 +57,7 @@ module Lox
     def visit_if_stmt(stmt)
       if truthy?(evaluate(stmt.condition))
         evaluate(stmt.then_branch)
-      else
+      elsif stmt.else_branch
         evaluate(stmt.else_branch)
       end
       nil
@@ -64,9 +70,13 @@ module Lox
     end
 
     def visit_while_stmt(stmt)
-      while truthy?(evaluate(stmt.condition))
-        evaluate(stmt.body)
+      begin
+        while truthy?(evaluate(stmt.condition))
+          evaluate(stmt.body, breakable: true)
+        end
+      rescue BreakControlFlow
       end
+
       nil
     end
 
@@ -173,7 +183,7 @@ module Lox
       end
     end
 
-    def evaluate(expr)
+    def evaluate(expr, breakable: false)
       expr.accept(self)
     end
 

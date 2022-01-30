@@ -1,0 +1,8 @@
+var a = true;
+var b = false;
+var c = (5 == 5);
+if(a) { print "correct"; } else { print "bug"; }
+if(b) { print "bug"; } else { print "correct"; }
+if(c) { print "correct"; } else { print "bug"; }
+if((3==12)) { print "bug"; } else { print "correct"; }
+

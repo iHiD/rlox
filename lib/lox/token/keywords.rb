@@ -1,6 +1,6 @@
 module Lox
   keywords = %i[
-    and class else false fun for if nil or
+    and break class else false fun for if nil or
     print return super this true var while
   ]
 

@@ -39,6 +39,7 @@ module Lox
     end
 
     def statement
+      return break_statement() if match?(Token::BREAK)
       return for_statement() if match?(Token::FOR)
       return if_statement() if match?(Token::IF)
       return print_statement() if match?(Token::PRINT)
@@ -46,6 +47,12 @@ module Lox
       return Stmt::Block.new(block()) if match?(Token::LEFT_BRACE)
 
       expression_statement()
+    end
+
+    def break_statement
+      consume(Token::SEMICOLON, "Expect ';' after break.")
+
+      Stmt::Break.new
     end
 
     def for_statement
