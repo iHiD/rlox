@@ -7,6 +7,7 @@ module Lox
 
   Expr::Assign = Expr.new(:name, :value)
   Expr::Binary = Expr.new(:left, :operator, :right)
+  Expr::Call = Expr.new(:callee, :paren, :arguments)
   Expr::Grouping = Expr.new(:expression)
   Expr::Literal = Expr.new(:value)
   Expr::Ternary = Expr.new(:condition, :true_expr, :false_expr)

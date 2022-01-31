@@ -1,0 +1,7 @@
+print clock();
+
+fun joke(a,b,c) {
+print (a + b + c);
+}
+
+joke(1,2,3);

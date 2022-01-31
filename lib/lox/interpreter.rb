@@ -11,7 +11,8 @@ module Lox
 
   class Interpreter
     def initialize
-      @environment = Environment.new
+      @globals = Environment.new(global: true)
+      @environment = globals
     end
 
     def interpret(statements)
@@ -20,13 +21,6 @@ module Lox
       end
     rescue Lox::RuntimeError => e
       Program.log_runtime_error(e)
-    end
-
-    private
-    attr_accessor :environment
-
-    def execute(stmt)
-      stmt.accept(self)
     end
 
     def execute_block(statements, local_environment)
@@ -40,6 +34,13 @@ module Lox
       end
     end
 
+    private
+    attr_accessor :globals, :environment
+
+    def execute(stmt)
+      stmt.accept(self)
+    end
+
     def visit_break_stmt(stmt)
       raise BreakControlFlow.new(stmt)
     end
@@ -51,6 +52,12 @@ module Lox
 
     def visit_expression_stmt(stmt)
       evaluate(stmt.expression)
+      nil
+    end
+
+    def visit_function_stmt(stmt)
+      function = Function.new(stmt)
+      environment.define(stmt.name.lexeme, function)
       nil
     end
 
@@ -83,7 +90,7 @@ module Lox
     def visit_var_stmt(stmt)
       value = evaluate(stmt.initializer) if stmt.initializer
 
-      environment.define(stmt.name, value)
+      environment.define(stmt.name.lexeme, value)
       nil
     end
 
@@ -91,6 +98,64 @@ module Lox
       evaluate(expr.value).tap do |value|
         environment.assign(expr.name, value)
       end
+    end
+
+    def visit_binary_expr(expr)
+      left = evaluate(expr.left)
+      right = evaluate(expr.right)
+
+      case expr.operator.type
+      when Token::MINUS
+        check_number_operands!(expr.operator, left, right)
+        left - right
+      when Token::PLUS
+        if left.is_a?(Numeric)
+          check_number_operands!(expr.operator, left, right)
+          left + right
+        elsif left.is_a?(String)
+          check_string_operands!(expr.operator, left, right)
+          left + right
+        end
+      when Token::SLASH
+        check_number_operands!(expr.operator, left, right)
+        left / right
+      when Token::STAR
+        check_number_operands!(expr.operator, left, right)
+        left * right
+      when Token::GREATER
+        check_number_operands!(expr.operator, left, right)
+        left > right
+      when Token::GREATER_EQUAL
+        check_number_operands!(expr.operator, left, right)
+        left >= right
+      when Token::LESS
+        check_number_operands!(expr.operator, left, right)
+        left < right
+      when Token::LESS_EQUAL
+        check_number_operands!(expr.operator, left, right)
+        left <= right
+      when Token::BANG_EQUAL
+        equal(left, right)
+      when Token::EQUAL_EQUAL
+        equal(left, right)
+      else
+        nil
+      end
+    end
+
+    def visit_call_expr(expr)
+      callee = evaluate(expr.callee)
+      args = expr.arguments.map { |arg| evaluate(arg) }
+
+      unless callee.class < Callable
+        raise RuntimeError.new(expr.paren, "Can only call functions and classes")
+      end
+
+      unless args.size == callee.arity
+        raise RuntimeError.new(expr.paren, "Expected #{callee.arity} arguments but got #{args.size}.")
+      end
+
+      callee.call(self, args)
     end
 
     def visit_literal_expr(expr)
@@ -138,49 +203,6 @@ module Lox
 
     def visit_variable_expr(expr)
       environment.get(expr.name)
-    end
-
-    def visit_binary_expr(expr)
-      left = evaluate(expr.left)
-      right = evaluate(expr.right)
-
-      case expr.operator.type
-      when Token::MINUS
-        check_number_operands!(expr.operator, left, right)
-        left - right
-      when Token::PLUS
-        if left.is_a?(Numeric)
-          check_number_operands!(expr.operator, left, right)
-          left + right
-        elsif left.is_a?(String)
-          check_string_operands!(expr.operator, left, right)
-          left + right
-        end
-      when Token::SLASH
-        check_number_operands!(expr.operator, left, right)
-        left / right
-      when Token::STAR
-        check_number_operands!(expr.operator, left, right)
-        left * right
-      when Token::GREATER
-        check_number_operands!(expr.operator, left, right)
-        left > right
-      when Token::GREATER_EQUAL
-        check_number_operands!(expr.operator, left, right)
-        left >= right
-      when Token::LESS
-        check_number_operands!(expr.operator, left, right)
-        left < right
-      when Token::LESS_EQUAL
-        check_number_operands!(expr.operator, left, right)
-        left <= right
-      when Token::BANG_EQUAL
-        equal(left, right)
-      when Token::EQUAL_EQUAL
-        equal(left, right)
-      else
-        nil
-      end
     end
 
     def evaluate(expr, breakable: false)

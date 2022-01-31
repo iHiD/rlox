@@ -1,12 +1,16 @@
 module Lox
   class Environment
-    def initialize(enclosing: nil)
+    def initialize(enclosing: nil, global: true)
       @values = {}
       @enclosing = enclosing
+
+      if global
+        define('clock', Globals::Clock.new)
+      end
     end
 
     def define(name, value)
-      values[name.lexeme] = value
+      values[name] = value
     end
 
     def assign(name, value)

@@ -22,7 +22,10 @@ module Lox
     attr_accessor :current
 
     def declaration
-      match?(Token::VAR) ? var_declaration : statement
+      return function(:function) if match?(Token::FUN)
+      return var_declaration() if match?(Token::VAR)
+
+      statement
     rescue ParserError
       syncronize
       nil
@@ -112,6 +115,29 @@ module Lox
       consume(Token::SEMICOLON, "Expect ';' after expression.")
 
       Stmt::Expression.new(expr)
+    end
+
+    def function(kind)
+      name = consume(Token::IDENTIFIER, "Expect #{kind} name.")
+      consume(Token::LEFT_PAREN, "Expect '(' after #{kind} name")
+
+      params = []
+      unless check?(Token::RIGHT_PAREN)
+        loop do
+          if params.size >= 255
+            error(peak(), "Can't have more than 255 params")
+          end
+
+          params << consume(Token::IDENTIFIER, "Expect paramater name")
+          break unless match?(Token::COMMA)
+        end
+      end
+
+      consume(Token::RIGHT_PAREN, "Expect ')' after paramaters")
+      consume(Token::LEFT_BRACE, "Expect '(' after #{kind} body")
+
+      body = block()
+      Stmt::Function.new(name, params, body)
     end
 
     def block
@@ -236,7 +262,38 @@ module Lox
         Expr::Unary.new(operator, right)
       end
 
-      primary()
+      call()
+    end
+
+    def finish_call(callee)
+      args = []
+
+      unless check?(Token::RIGHT_PAREN)
+        loop do
+          if args.size >= 255
+            error(peak(), "Can't have more than 255 arguments")
+          end
+
+          args << expression()
+          break unless match?(Token::COMMA)
+        end
+      end
+
+      paren = consume(Token::RIGHT_PAREN, "Expect ')' after arguments")
+
+      Expr::Call.new(callee, paren, args)
+    end
+
+    def call
+      expr = primary()
+
+      loop do
+        break unless match?(Token::LEFT_PAREN)
+
+        expr = finish_call(expr)
+      end
+
+      expr
     end
 
     def primary
