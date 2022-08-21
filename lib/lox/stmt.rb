@@ -19,6 +19,7 @@ module Lox
   Stmt::If = Stmt.new(:condition, :then_branch, :else_branch)
   Stmt::For = Stmt.new(:condition, :body)
   Stmt::Print = Stmt.new(:expression)
+  Stmt::Return = Stmt.new(:keyword, :value)
   Stmt::Var = Stmt.new(:name, :initializer)
   Stmt::While = Stmt.new(:condition, :body)
 end

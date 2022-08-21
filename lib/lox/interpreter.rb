@@ -8,6 +8,14 @@ module Lox
   end
 
   class BreakControlFlow < RuntimeError; end
+  class ReturnControlFlow < RuntimeError
+    attr_reader :value
+
+    def initialize(value)
+      super("")
+      @value = value
+    end
+  end
 
   class Interpreter
     def initialize
@@ -29,6 +37,8 @@ module Lox
       begin
         self.environment = local_environment
         statements.each { |stmt| execute(stmt) }
+      rescue ReturnControlFlow => e
+        e.value
       ensure
         self.environment = previous_environment
       end
@@ -74,6 +84,11 @@ module Lox
       value = evaluate(stmt.expression)
       puts value # This is actual code, not debugging
       nil
+    end
+
+    def visit_return_stmt(stmt)
+      value = evaluate(stmt.value)
+      raise ReturnControlFlow.new(value)
     end
 
     def visit_while_stmt(stmt)
