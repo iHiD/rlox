@@ -1,7 +1,8 @@
 module Lox
   class Function < Callable
-    def initialize(declaration)
+    def initialize(declaration, closure)
       @declaration = declaration
+      @closure = closure.dup
     end
 
     def arity
@@ -13,7 +14,7 @@ module Lox
     end
 
     def call(interpreter, args)
-      env = Environment.new(global: true)
+      env = Environment.new(enclosing: closure)
       args.each.with_index do |arg, idx|
         env.define(declaration.params[idx].lexeme, arg)
       end
@@ -22,7 +23,7 @@ module Lox
     end
 
     private
-    attr_reader :declaration
+    attr_reader :declaration, :closure
   end
 end
 

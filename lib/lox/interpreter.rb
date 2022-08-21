@@ -20,7 +20,12 @@ module Lox
   class Interpreter
     def initialize
       @globals = Environment.new(global: true)
+      @locals = {}
       @environment = globals
+    end
+
+    def resolve(expr, depth)
+      locals[expr] = depth
     end
 
     def interpret(statements)
@@ -45,7 +50,7 @@ module Lox
     end
 
     private
-    attr_accessor :globals, :environment
+    attr_accessor :globals, :locals, :environment
 
     def execute(stmt)
       stmt.accept(self)
@@ -66,9 +71,8 @@ module Lox
     end
 
     def visit_function_stmt(stmt)
-      function = Function.new(stmt)
+      function = Function.new(stmt, environment)
       environment.define(stmt.name.lexeme, function)
-      nil
     end
 
     def visit_if_stmt(stmt)
@@ -111,7 +115,8 @@ module Lox
 
     def visit_assign_expr(expr)
       evaluate(expr.value).tap do |value|
-        environment.assign(expr.name, value)
+        distance = locals[expr]
+        distance ? environment.assign_at(distance, expr.name, value) : globals.assign(expr.name, value)
       end
     end
 
@@ -217,7 +222,8 @@ module Lox
     end
 
     def visit_variable_expr(expr)
-      environment.get(expr.name)
+      distance = locals[expr]
+      distance ? environment.get_at(distance, expr.name.lexeme) : globals.get(expr.name)
     end
 
     def evaluate(expr, breakable: false)

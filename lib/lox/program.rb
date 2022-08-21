@@ -16,6 +16,10 @@ module Lox
       instance.log_parse_error(*args)
     end
 
+    def self.log_resolver_error(*args)
+      instance.log_resolver_error(*args)
+    end
+
     def self.log_runtime_error(*args)
       instance.log_runtime_error(*args)
     end
@@ -45,6 +49,14 @@ module Lox
       else
         report(token.line, " at '#{token.lexeme}'", msg)
       end
+
+      had_compile_error = true
+    end
+
+    def log_resolver_error(token, msg)
+      report(token.line, " at '#{token.lexeme}'", msg)
+
+      had_compile_error = true
     end
 
     def log_runtime_error(exception)
@@ -56,7 +68,7 @@ module Lox
 
     private
     attr_reader :interpreter
-    attr_reader :args, :had_compile_error, :had_runtime_error
+    attr_reader :args, :had_compile_error, :had_resolution_error, :had_runtime_error
 
     def run_file(filepath)
       run(File.read(filepath))
@@ -85,6 +97,10 @@ module Lox
 
       parser = Parser.new(tokens)
       statements = parser.parse
+
+      return if had_compile_error
+
+      Resolver.new(interpreter).resolve(statements)
 
       return if had_compile_error
 
