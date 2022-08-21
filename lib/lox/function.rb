@@ -19,8 +19,6 @@ module Lox
       end
 
       interpreter.execute_block(declaration.body, env)
-
-      nil
     end
 
     private
