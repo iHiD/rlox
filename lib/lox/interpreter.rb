@@ -42,8 +42,6 @@ module Lox
       begin
         self.environment = local_environment
         statements.each { |stmt| execute(stmt) }
-      rescue ReturnControlFlow => e
-        e.value
       ensure
         self.environment = previous_environment
       end
@@ -65,14 +63,28 @@ module Lox
       nil
     end
 
+    def visit_class_stmt(stmt)
+      environment.define(stmt.identifier.lexeme, nil)
+
+      methods = {}
+      stmt.methods.each do |method|
+        initializer = method.identifier.lexeme == "init"
+        func = Constructs::Function.new(method, environment, initializer: initializer)
+        methods[method.identifier.lexeme] = func
+      end
+
+      klass = Constructs::Class.new(stmt.identifier.lexeme, methods)
+      environment.assign(stmt.identifier, klass)
+    end
+
     def visit_expression_stmt(stmt)
       evaluate(stmt.expression)
       nil
     end
 
     def visit_function_stmt(stmt)
-      function = Function.new(stmt, environment)
-      environment.define(stmt.name.lexeme, function)
+      function = Constructs::Function.new(stmt, environment)
+      environment.define(stmt.identifier.lexeme, function)
     end
 
     def visit_if_stmt(stmt)
@@ -109,14 +121,14 @@ module Lox
     def visit_var_stmt(stmt)
       value = evaluate(stmt.initializer) if stmt.initializer
 
-      environment.define(stmt.name.lexeme, value)
+      environment.define(stmt.identifier.lexeme, value)
       nil
     end
 
     def visit_assign_expr(expr)
       evaluate(expr.value).tap do |value|
         distance = locals[expr]
-        distance ? environment.assign_at(distance, expr.name, value) : globals.assign(expr.name, value)
+        distance ? environment.assign_at(distance, expr.identifier, value) : globals.assign(expr.identifier, value)
       end
     end
 
@@ -178,6 +190,15 @@ module Lox
       callee.call(self, args)
     end
 
+    def visit_get_expr(expr)
+      object = evaluate(expr.object)
+      unless object.is_a?(Constructs::Instance)
+        raise RuntimeError.new(expr.name, "Only instances have properties")
+      end
+
+      object.get(expr.identifier)
+    end
+
     def visit_literal_expr(expr)
       expr.value
     end
@@ -197,6 +218,20 @@ module Lox
 
     def visit_grouping_expr(expr)
       evaluate(expr.expression)
+    end
+
+    def visit_set_expr(expr)
+      object = evaluate(expr.object)
+      unless object.is_a?(Constructs::Instance)
+        raise RuntimeError.new(expr.identifier, "Only instances have fields")
+      end
+
+      value = evaluate(expr.value)
+      object.set(expr.identifier, value)
+    end
+
+    def visit_this_expr(expr)
+      lookup_variable(expr.keyword, expr)
     end
 
     def visit_ternary_expr(expr)
@@ -222,8 +257,12 @@ module Lox
     end
 
     def visit_variable_expr(expr)
+      lookup_variable(expr.identifier, expr)
+    end
+
+    def lookup_variable(identifier, expr)
       distance = locals[expr]
-      distance ? environment.get_at(distance, expr.name.lexeme) : globals.get(expr.name)
+      distance ? environment.get_at(distance, identifier.lexeme) : globals.get(identifier)
     end
 
     def evaluate(expr, breakable: false)

@@ -28,21 +28,21 @@ module Lox
       values[name] = value
     end
 
-    def assign(name, value)
-      if values.key?(name.lexeme)
-        values[name.lexeme] = value
+    def assign(identifier, value)
+      if values.key?(identifier.lexeme)
+        values[identifier.lexeme] = value
         return
       end
 
-      return enclosing.assign(name, value) if enclosing
+      return enclosing.assign(identifier, value) if enclosing
 
-      guard_undefined!(name)
+      guard_undefined!(identifier)
     end
 
-    def assign_at(distance, name, value)
+    def assign_at(distance, identifier, value)
       env = self
       distance.times { env = env.enclosing }
-      env.set_value(name.lexeme, value)
+      env.set_value(identifier.lexeme, value)
     end
 
     def get(identifier)
@@ -61,8 +61,8 @@ module Lox
     private
     attr_reader :values
 
-    def guard_undefined!(name)
-      raise Lox::RuntimeError.new(name, "Undefined variable '#{name.lexeme}'.")
+    def guard_undefined!(identifier)
+      raise Lox::RuntimeError.new(identifier, "Undefined variable '#{identifier.lexeme}'.")
     end
   end
 end

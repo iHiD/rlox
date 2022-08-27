@@ -23,6 +23,7 @@ module Lox
 
     def declaration
       return function(:function) if match?(Token::FUN)
+      return class_declaration() if match?(Token::CLASS)
       return var_declaration() if match?(Token::VAR)
 
       statement
@@ -39,6 +40,20 @@ module Lox
       consume(Token::SEMICOLON, "Expect ';' after variable declaration")
 
       Stmt::Var.new(name, initializer)
+    end
+
+    def class_declaration
+      identifier = consume(Token::IDENTIFIER, "Expect class name")
+      consume(Token::LEFT_BRACE, "Expect '{' before class body")
+
+      methods = []
+      while(!check?(Token::RIGHT_BRACE) && !at_end?)
+        methods << function("method") 
+      end
+
+      consume(Token::RIGHT_BRACE, "Expect '}' after class body")
+
+      Stmt::Class.new(identifier, methods)
     end
 
     def statement
@@ -171,9 +186,13 @@ module Lox
         equals = previous()
         value = assignment()
 
-        return Expr::Assign.new(expr.name, value) if expr.is_a?(Expr::Variable)
-
-        error(equals, "Invalid assignment target.")
+        if expr.is_a?(Expr::Variable)
+          return Expr::Assign.new(expr.identifier, value) 
+        elsif expr.is_a?(Expr::Get)
+          return Expr::Set.new(expr.object, expr.identifier, value)
+        else
+          error(equals, "Invalid assignment target.")
+        end
       end
 
       expr
@@ -298,9 +317,14 @@ module Lox
       expr = primary()
 
       loop do
-        break unless match?(Token::LEFT_PAREN)
-
-        expr = finish_call(expr)
+        if match?(Token::LEFT_PAREN)
+          expr = finish_call(expr)
+        elsif match?(Token::DOT)
+          identifier = consume(Token::IDENTIFIER, "Expect property name after '.'.")
+          expr = Expr::Get.new(expr, identifier)
+        else
+          break 
+        end
       end
 
       expr
@@ -314,6 +338,7 @@ module Lox
       return Expr::Literal.new(previous.literal.to_f) if match?(Token::NUMBER)
       return Expr::Literal.new(previous.literal) if match?(Token::STRING)
 
+      return Expr::This.new(previous) if match?(Token::THIS)
       return Expr::Variable.new(previous) if match?(Token::IDENTIFIER)
 
       if match?(Token::LEFT_PAREN)
